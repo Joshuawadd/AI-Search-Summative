@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import random
-import heapq
 
 
 def read_file_into_string(input_file, from_ord, to_ord):
@@ -191,13 +190,13 @@ my_last_name = "Waddington"
 ############    SA = simulated annealing search                                            ############
 ############    GA = genetic algorithm                                                     ############
 
-alg_code = "AS"
+alg_code = "BG"
 
 ############ you can also add a note that will be added to the end of the output file if   ############
 ############ you like, e.g., "in my basic greedy search, I broke ties by always visiting   ############
 ############ the first nearest city found" or leave it empty if you wish                   ############
 
-added_note = "Used a greedy heuristic"
+added_note = "Modified by breaking ties by looking at which node had the nearest following node."
 
 ############ the line below sets up a dictionary of codes and search names (you need do    ############
 ############ nothing unless you implement an alternative algorithm and I give you a code   ############
@@ -216,35 +215,50 @@ codes_and_names = {'BF': 'brute-force search',
 #######################################################################################################
 ############    now the code for your algorithm should begin                               ############
 #######################################################################################################
-t1 = time.time()
-heap = []
 cities_set = {0}
 
 for i in range(1, num_cities):
     cities_set.add(i)
 
-def find_next_greedy(route_list, node):
+def find_next_node(route_list, node, recursive):
     shortest_distance = -1
     next_node = 0
-    greedy_next_tour_set = set(route_list)
-    unvisited_next_greedy = cities_set - greedy_next_tour_set
-    for j in unvisited_next_greedy:
+    tour_set = set(route_list)
+    unvisited_cities = cities_set - tour_set
+    for j in unvisited_cities:
         if shortest_distance == -1:
             shortest_distance = distance_matrix[node][j]
             next_node = j
         elif distance_matrix[node][j] < shortest_distance:
             shortest_distance = distance_matrix[node][j]
             next_node = j
+        elif not recursive:
+            if distance_matrix[node][j] == shortest_distance:
+
+                temp_tour_A = route_list.copy()
+                temp_tour_A.append(next_node)
+                next_node_A = find_next_node(temp_tour_A, next_node, True)
+                shortest_A = next_node_A[1]
+
+                temp_tour_B = route_list.copy()
+                temp_tour_B.append(j)
+                next_node_B = find_next_node(temp_tour_B, j, True)
+                shortest_B = next_node_B[1]
+
+
+                if shortest_B < shortest_A:
+                    shortest_distance = distance_matrix[node][j]
+                    next_node = j
     return next_node, shortest_distance
 
 
-def greedy(route):
+def greedy():
+    route = []
     route_length = 0
-    current_node = route[-1]
-    greedy_tour_set = set(route)
-    unvisited_cities_greedy = cities_set - greedy_tour_set
-    for i in unvisited_cities_greedy:
-        next_node_distance = find_next_greedy(route, current_node)
+    current_node = 0
+    route.append(current_node)
+    for i in range(0, num_cities-1):
+        next_node_distance = find_next_node(route, current_node, False)
         current_node = next_node_distance[0]
         route.append(current_node)
         route_length = route_length + next_node_distance[1]
@@ -252,68 +266,12 @@ def greedy(route):
     return route, route_length
 
 
-def find_next_AS(next_tour, AS_current_node, AS_current_length):
-    global heap
-    AS_next_node = 0
-    tour_set = set(next_tour)
-    unvisited_cities = cities_set - tour_set
-    for a in unvisited_cities:
-        h_tour = next_tour.copy()
-        h_tour.append(a)
-        h = greedy(h_tour.copy())
-        f_distance = h[1] + AS_current_length + distance_matrix[AS_current_node][a]
-        b = 0
-        in_heap = False
-        popped = False
-        for item in heap:
-            if a == item[2]:
-                in_heap = True
-                if f_distance <= item[0]:
-                    heap[b] = heap[-1]
-                    heap.pop()
-                    heapq.heapify(heap)
-                    popped = True
-            b = b+1
-
-        if not in_heap:
-            heapq.heappush(heap, (f_distance, h_tour, a, AS_current_length + distance_matrix[AS_current_node][a]))
-        if popped:
-            heapq.heappush(heap, (f_distance, h_tour, a, AS_current_length + distance_matrix[AS_current_node][a]))
-
-    heap_next = heapq.heappop(heap)
-    return heap_next[1], heap_next[2], heap_next[3]
-
-
-def AS_search():
-    AS_tour = []
-    AS_tour_length = 0
-    AS_node = 0
-    AS_tour.append(AS_node)
-    early_termination = False
-    while len(AS_tour) != num_cities and early_termination == False:
-        next_node_AS = find_next_AS(AS_tour, AS_node, AS_tour_length)
-        AS_tour = next_node_AS[0]
-        AS_tour_length = next_node_AS[2]
-        AS_node = next_node_AS[1]
-        t2 = time.time()
-        if t2-t1 > 120:
-            early_termination = True
-    if early_termination == False:
-        AS_tour_length = AS_tour_length + distance_matrix[AS_node][0]
-    else:
-        next_node_AS = greedy(AS_tour.copy())
-        AS_tour = next_node_AS[0]
-        AS_tour_length = AS_tour_length + next_node_AS[1]
-
-    return AS_tour, AS_tour_length
-
-
-greedy_tour = AS_search()
+greedy_tour = greedy()
 tour = greedy_tour[0]
 tour_length = greedy_tour[1]
 print(tour)
-t2 = time.time()
-print(t2-t1)
+
+
 
 #######################################################################################################
 ############ the code for your algorithm should now be complete and you should have        ############
@@ -327,7 +285,6 @@ print(t2-t1)
 #######################################################################################################
 
 check_tour_length = 0
-#print(len(tour))
 for i in range(0, num_cities - 1):
     check_tour_length = check_tour_length + distance_matrix[tour[i]][tour[i + 1]]
 check_tour_length = check_tour_length + distance_matrix[tour[num_cities - 1]][tour[0]]

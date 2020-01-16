@@ -1,0 +1,5 @@
+USER = xgnq82 (Joshua Waddington)
+ALGORITHM = BG, FILENAME = AISearchfile021
+NUMBER OF CITIES = 21, TOUR LENGTH = 3760
+0,19,17,4,1,10,15,18,14,7,16,5,9,2,20,6,12,8,11,3,13
+NOTE = Modified by breaking ties by looking at which node had the nearest following node.

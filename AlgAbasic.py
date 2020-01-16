@@ -215,37 +215,48 @@ codes_and_names = {'BF': 'brute-force search',
 #######################################################################################################
 ############    now the code for your algorithm should begin                               ############
 #######################################################################################################
+cities_set = {0}
 
-print(distance_matrix)
-current_node = 0
-tour = []
-tour_length = 0
-start_node = 0
-while len(tour) != num_cities:
-    tour.append(current_node)
+for i in range(1, num_cities):
+    cities_set.add(i)
+
+def find_next_node(route_list, node):
     shortest_distance = -1
     next_node = 0
-    for i in range(0, num_cities):
-        if i in tour:
-            if len(tour) == num_cities:
-                shortest_distance = distance_matrix[current_node][start_node]
-                next_node = start_node
-        elif shortest_distance == -1:
-            shortest_distance = distance_matrix[current_node][i]
-            next_node = i
-        elif distance_matrix[current_node][i] < shortest_distance:
-            shortest_distance = distance_matrix[current_node][i]
-            next_node = i
-    current_node = next_node
-    tour_length = tour_length + shortest_distance
+    tour_set = set(route_list)
+    unvisited_cities = cities_set - tour_set
+    for j in unvisited_cities:
+        if shortest_distance == -1:
+            shortest_distance = distance_matrix[node][j]
+            next_node = j
+        elif distance_matrix[node][j] < shortest_distance:
+            shortest_distance = distance_matrix[node][j]
+            next_node = j
 
-tour.append(start_node)
+    return next_node, shortest_distance
+
+
+def greedy():
+    route = []
+    route_length = 0
+    current_node = 0
+    route.append(current_node)
+    for i in range(0, num_cities-1):
+        next_node_distance = find_next_node(route, current_node)
+        current_node = next_node_distance[0]
+        route.append(current_node)
+        route_length = route_length + next_node_distance[1]
+    route_length = route_length + distance_matrix[current_node][0]
+    return route, route_length
+
+
+greedy_tour = greedy()
+tour = greedy_tour[0]
+tour_length = greedy_tour[1]
 print(tour)
-print(tour_length)
 
 
-
-        #######################################################################################################
+#######################################################################################################
 ############ the code for your algorithm should now be complete and you should have        ############
 ############ computed a tour held in the list "tour" of length "tour_length"               ############
 #######################################################################################################
